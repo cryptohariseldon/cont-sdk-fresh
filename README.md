@@ -12,6 +12,7 @@ This package is intentionally separate from the deployment repo. It assumes the 
 For build and environment setup, keep the existing repo docs in reach:
 
 - [Build And Setup Notes](./docs/BUILD-SETUP.md)
+- [Full Harness API Reference](./docs/api.md)
 
 ## What It Covers
 
@@ -26,7 +27,7 @@ For build and environment setup, keep the existing repo docs in reach:
   - `RelayerPerpQuoterBot`
   - `continuum-quoter`
 
-The harness API surface follows the existing reference in [`mng-v4/api.md`](../mng-v4/api.md).
+The harness API surface is included directly in this repo at [docs/api.md](./docs/api.md).
 
 ## Install
 
