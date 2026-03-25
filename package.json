@@ -1,0 +1,35 @@
+{
+  "name": "@fermilabs/continuum-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-contained SDK for Mango relayer quoting, Continuum harness reads, and direct chain interactions.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "continuum-quoter": "./dist/bin/run-quoter.js"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "proto",
+    "README.md",
+    ".env.example"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@blockworks-foundation/mango-v4": "^0.24.0",
+    "@coral-xyz/anchor": "^0.29.0",
+    "@grpc/grpc-js": "^1.14.1",
+    "@grpc/proto-loader": "^0.8.0",
+    "@solana/web3.js": "^1.78.2",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.6.3"
+  }
+}
