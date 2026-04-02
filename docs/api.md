@@ -26,8 +26,14 @@ Set via:
 
 ### Exact Localhost Endpoints Requested
 
+- `http://127.0.0.1:9091/state/markets?markets=0,1&view=optimistic|confirmed&depth=10&book=summary|full`
+- `http://127.0.0.1:9091/state/markets/<market>?view=optimistic|confirmed&depth=10`
 - `http://127.0.0.1:9091/state/balances/<owner>?view=optimistic|confirmed`
+- `http://127.0.0.1:9091/state/trades?market=<market>&owner=<owner>&view=optimistic|confirmed&limit=200`
 - `http://127.0.0.1:9091/state/trades/<market>?view=optimistic|confirmed&limit=200`
+- `http://127.0.0.1:9091/state/trades/summary?market=<market>&owner=<owner>&view=optimistic|confirmed`
+- `http://127.0.0.1:9091/state/stream/trades?market=<market>&view=optimistic|confirmed&backfill_n=50`
+- `http://127.0.0.1:9091/state/stream/frontend?owner=<owner>&mango_account=<account>&market=<market>`
 - `http://127.0.0.1:9091/state/candles/<market>?view=optimistic|confirmed&resolution_sec=60&limit=200`
 - `http://127.0.0.1:9091/airdrop` (POST body with connected wallet pubkey)
 - `http://127.0.0.1:9091/airdrop-deposit` (POST body with connected wallet pubkey)
@@ -296,36 +302,113 @@ Errors:
 
 ## 3) State Read API
 
-## `GET /state/markets/:market?view=optimistic|confirmed`
+## `GET /state/markets?markets=<id,id>&view=optimistic|confirmed&depth=<n>&book=summary|full`
 
-Returns market-level orderbook/open-order projection.
+Returns market cards for one or more markets.
 
-Example response:
+Query params:
+- `markets` optional comma-separated subset
+- `view` optional (`optimistic` default)
+- `depth` optional orderbook summary depth (`10` default)
+- `book` optional: `summary` hides full bids/asks, `full` returns the full replayed orderbook in `data`
+
+Response `200`:
 
 ```json
 {
   "view": "optimistic",
+  "items": [
+    {
+      "market": "0",
+      "view": "optimistic",
+      "metadata": {
+        "market_index": 0,
+        "name": "SOL-PERP"
+      },
+      "data": {
+        "market": "0",
+        "bids": [],
+        "asks": [],
+        "open_orders": [],
+        "watermarks": {
+          "optimistic_seq": "124",
+          "confirmed_seq": "120",
+          "last_slot": "290123456"
+        }
+      },
+      "orderbook_summary": {
+        "depth": 10,
+        "bids": [],
+        "asks": []
+      },
+      "trade_summary": {
+        "market": "0",
+        "view": "optimistic",
+        "window_ms": 86400000,
+        "trade_count": 0,
+        "change_24h_pct": null
+      },
+      "metrics": {
+        "market": "0",
+        "oracle_price_ui": 151.23,
+        "mark_price_ui": 151.22,
+        "funding_rate_daily_pct": 0.01,
+        "funding_rate_hourly_pct": 0.0004,
+        "open_interest_base_lots": "100000",
+        "open_interest_base_ui": 10,
+        "best_bid_ui": 151.2,
+        "best_ask_ui": 151.24,
+        "updated_ts_ms": 1772349020285
+      }
+    }
+  ]
+}
+```
+
+## `GET /state/markets/:market?view=optimistic|confirmed&depth=<n>`
+
+Returns a single market with the replayed market state plus frontend-oriented summaries and metrics.
+
+Response `200`:
+
+```json
+{
+  "view": "optimistic",
+  "metadata": {
+    "market_index": 0,
+    "name": "SOL-PERP"
+  },
+  "orderbook_summary": {
+    "depth": 10,
+    "bids": [],
+    "asks": []
+  },
+  "trade_summary": {
+    "market": "0",
+    "view": "optimistic",
+    "window_ms": 86400000,
+    "trade_count": 0,
+    "change_24h_pct": null
+  },
+  "metrics": {
+    "market": "0",
+    "oracle_price_ui": 151.23,
+    "mark_price_ui": 151.22,
+    "funding_rate_daily_pct": 0.01,
+    "funding_rate_hourly_pct": 0.0004,
+    "open_interest_base_lots": "100000",
+    "open_interest_base_ui": 10,
+    "best_bid_ui": 151.2,
+    "best_ask_ui": 151.24,
+    "updated_ts_ms": 1772349020285
+  },
   "data": {
     "market": "0",
     "bids": [
       { "price_lots": "100", "base_lots": "2" }
     ],
     "asks": [],
-    "open_orders": [
-      {
-        "order_id": "...",
-        "owner": "...",
-        "mango_account": "...",
-        "market": "0",
-        "side": "bid",
-        "price_lots": "100",
-        "base_lots": "2",
-        "quote_lots": "1000",
-        "client_order_id": "1712345678901",
-        "sequence": "123",
-        "status": "open"
-      }
-    ],
+    "open_orders": [],
     "watermarks": {
       "optimistic_seq": "124",
       "confirmed_seq": "120",
@@ -435,9 +518,15 @@ Response `200`:
 }
 ```
 
-## `GET /state/trades/:market?view=optimistic|confirmed&limit=<n>`
+## `GET /state/trades?market=<market>&owner=<owner>&view=optimistic|confirmed&limit=<n>`
 
-Returns recent trade prints inferred by deterministic replay from matched order flow.
+Returns recent replayed trades with optional market and owner filters.
+
+Query params:
+- `market` optional, omit to stream/query all markets
+- `owner` optional owner pubkey filter
+- `view` optional (`optimistic` default)
+- `limit` optional (`200` default, max `5000`)
 
 Response `200`:
 
@@ -445,6 +534,7 @@ Response `200`:
 {
   "view": "confirmed",
   "market": "0",
+  "owner": "9xQeWvG816bUx9EPjHmaT23yvVMR6YJ7TrwV7K9Zbd5A",
   "data": [
     {
       "trade_id": "...",
@@ -461,6 +551,44 @@ Response `200`:
       "view": "confirmed"
     }
   ]
+}
+```
+
+## `GET /state/trades/:market?view=optimistic|confirmed&limit=<n>`
+
+Compatibility alias for the market-scoped trade query.
+
+## `GET /state/trades/summary?market=<market>&owner=<owner>&view=optimistic|confirmed`
+
+Returns a 24h trade summary for one market, or for all markets when `market` is omitted.
+
+Single-market response:
+
+```json
+{
+  "view": "optimistic",
+  "market": "0",
+  "owner": null,
+  "data": {
+    "market": "0",
+    "view": "optimistic",
+    "window_ms": 86400000,
+    "trade_count": 12,
+    "last_trade_ts_ms": 1772349020285,
+    "last_price_lots": "100",
+    "last_price_ui": 151.24,
+    "open_price_lots": "99",
+    "open_price_ui": 150.75,
+    "high_price_lots": "101",
+    "high_price_ui": 151.75,
+    "low_price_lots": "98",
+    "low_price_ui": 149.8,
+    "change_24h_pct": 0.324,
+    "volume_base_lots": "1000",
+    "volume_quote_lots": "151240",
+    "volume_base_ui": 10,
+    "volume_quote_ui": 1512.4
+  }
 }
 ```
 
@@ -553,7 +681,7 @@ Response `200`:
 
 ### `GET /state/stream`
 
-Server-sent event stream.
+Legacy raw harness SSE stream.
 
 Events emitted:
 - `connected`
@@ -563,17 +691,43 @@ Events emitted:
 - `divergence_event`
 - `market_state_updated` (initial synthetic update)
 
-Heartbeat comments are sent periodically.
+### `GET /state/stream/trades?market=<market>&view=optimistic|confirmed&backfill_n=<n>`
+
+Trade SSE stream.
+
+Behavior:
+- omitting `market` streams all markets
+- initial `snapshot` event returns the last `backfill_n` trades
+- subsequent `trade` events emit new replayed trades only
 
 Example:
 
 ```text
 event: connected
-data: {"ts_ms":1772349020285,"mode":"local"}
+data: {"ts_ms":1772349020285,"mode":"local","view":"optimistic","market":"0"}
 
-event: relay_intent_accepted
-data: {"event_type":"relay_intent_accepted", ...}
+event: snapshot
+data: {"view":"optimistic","market":"0","data":[...]}
+
+event: trade
+data: {"trade_id":"...","market":"0", ...}
 ```
+
+### `GET /state/stream/frontend?owner=<owner>&mango_account=<account>&market=<market>&include=...`
+
+Frontend-oriented SSE stream for owner and/or market slices.
+
+Behavior:
+- requires at least one of `owner`, `mango_account`, or `market`
+- emits `snapshot` on connect
+- emits `account_update` when the owner slice changes
+- emits `market_update` when the market slice changes
+- `include` can request any subset of `positions`, `trades`, `open_orders`, `account_metrics`, `market_metrics`, `trade_summary`, `orderbook_summary`, `orderbook`
+- `orderbook=full` enables `orderbook` in the market slice
+
+Current limitation:
+- `account_metrics` is intentionally stubbed for now:
+  `{"status":"stub","source":"pending-subtree",...}`
 
 ## Data Models
 
