@@ -4,6 +4,7 @@ import {
   encodePerpCancelOrderByClientOrderIdQueuePayload,
   encodePerpPlaceOrderV2QueuePayload,
   I64_MAX_BN,
+  PerpMarketIndex,
   PerpOrderSide,
   PerpOrderType,
   PerpSelfTradeBehavior,
@@ -81,7 +82,9 @@ export async function submitPerpOrderViaRelayer(
   context: MangoContext,
   params: SubmitPerpOrderParams,
 ): Promise<SubmitIntentResponse> {
-  const perpMarket = context.group.getPerpMarketByMarketIndex(params.marketIndex);
+  const perpMarket = context.group.getPerpMarketByMarketIndex(
+    params.marketIndex as PerpMarketIndex,
+  );
   const payload = encodePerpPlaceOrderV2QueuePayload({
     side: params.side,
     priceLots: BigInt(perpMarket.uiPriceToLots(params.price).toString()),

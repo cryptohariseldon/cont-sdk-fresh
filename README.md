@@ -36,6 +36,25 @@ npm install
 npm run build
 ```
 
+## Bootstrap Scripts
+
+Create a Mango account for the configured owner:
+
+```bash
+npm run create-mango-account
+```
+
+Deposit USDC from the configured wallet ATA into Mango:
+
+```bash
+npm run deposit-usdc
+```
+
+The create script uses `GROUP_PK`, `USER_KEYPAIR`, and optional sizing env vars such as
+`MANGO_ACCOUNT_NUM` and `MANGO_ACCOUNT_NAME`. The deposit script uses the same base env,
+resolves the Mango account from `MANGO_ACCOUNT_PK` or `MANGO_ACCOUNT_NUM`, and deposits
+`USDC_AMOUNT_UI` using `USDC_MINT` if set or the group's perp-settlement mint otherwise.
+
 ## Remote Quoter Setup
 
 Copy `.env.example` and fill in the actual remote endpoints and account keys:
@@ -126,3 +145,4 @@ Those direct actions use the upstream `@blockworks-foundation/mango-v4` client.
 
 - The bundled quoter is intentionally minimal. The larger in-repo bot has more operational behaviors, startup funding logic, and deployment-specific assumptions.
 - This SDK keeps the harness read path and relayer write path separate so external users can script their own strategies cleanly.
+- The bootstrap scripts are direct Mango client flows. They do not mint test USDC; for local harness funding use `ContinuumHarnessClient.airdropUsdc()` or `airdropDepositUsdc()` where available.

@@ -11,6 +11,7 @@ import {
   MANGO_V4_ID,
   MangoAccount,
   MangoClient,
+  PerpMarketIndex,
   PerpMarket,
 } from '@blockworks-foundation/mango-v4';
 import fs from 'fs';
@@ -102,7 +103,9 @@ export async function buildCanonicalPerpRemainingAccounts(
   }>
 > {
   const perpMarket: PerpMarket =
-    context.group.getPerpMarketByMarketIndex(perpMarketIndex);
+    context.group.getPerpMarketByMarketIndex(
+      perpMarketIndex as PerpMarketIndex,
+    );
   const healthRemainingAccounts = await context.client.buildHealthRemainingAccounts(
     context.group,
     [context.mangoAccount],
