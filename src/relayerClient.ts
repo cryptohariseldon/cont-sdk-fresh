@@ -51,7 +51,15 @@ export class ContinuumRelayerClient {
     this.apiKey = apiKey;
   }
 
+  private requireApiKey(method: string): string {
+    if (!this.apiKey) {
+      throw new Error(`FERMI_API_KEY is required for ${method}`);
+    }
+    return this.apiKey;
+  }
+
   async submitIntent(request: SubmitIntentRequest): Promise<SubmitIntentResponse> {
+    const apiKey = this.requireApiKey('submitIntent');
     const body = {
       group: request.group,
       execution_queue: request.execution_queue,
@@ -67,10 +75,8 @@ export class ContinuumRelayerClient {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
     };
-    if (this.apiKey) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
-    }
 
     const response = await fetch(`${this.baseUrl}/submit-intent`, {
       method: 'POST',
