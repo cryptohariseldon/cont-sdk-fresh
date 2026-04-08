@@ -40,8 +40,8 @@ async function main(): Promise<void> {
     executionQueuePk: requiredEnv('EXECUTION_QUEUE_PK'),
     programId: process.env.PROGRAM_ID,
   });
-  const apiUrl = process.env.FERMI_API_URL || 'https://v1.fermi.trade';
-  const relayer = new ContinuumRelayerClient(apiUrl);
+  const apiUrl = requiredEnv('FERMI_API_URL');
+  const relayer = new ContinuumRelayerClient(apiUrl, process.env.FERMI_API_KEY);
   const harness = new ContinuumHarnessClient(apiUrl);
   const fairPriceProvider = new CoinGeckoFairPriceProvider(
     process.env.COINGECKO_ASSET_ID || 'solana',

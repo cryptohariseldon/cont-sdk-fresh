@@ -42,13 +42,13 @@ export function toRelayerAccountMeta(account: AccountMeta): RelayerAccountMeta {
   };
 }
 
-export const DEFAULT_FERMI_API_URL = 'https://v1.fermi.trade';
-
 export class ContinuumRelayerClient {
   private readonly baseUrl: string;
+  private readonly apiKey?: string;
 
-  constructor(baseUrl?: string) {
-    this.baseUrl = (baseUrl ?? DEFAULT_FERMI_API_URL).replace(/\/+$/, '');
+  constructor(baseUrl: string, apiKey?: string) {
+    this.baseUrl = baseUrl.replace(/\/+$/, '');
+    this.apiKey = apiKey;
   }
 
   async submitIntent(request: SubmitIntentRequest): Promise<SubmitIntentResponse> {
@@ -65,9 +65,16 @@ export class ContinuumRelayerClient {
       user_signature: toBase64(request.user_signature),
     };
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+
     const response = await fetch(`${this.baseUrl}/submit-intent`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     });
 

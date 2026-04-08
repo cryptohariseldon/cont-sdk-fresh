@@ -70,10 +70,11 @@ Required values:
 - `GROUP_PK`: Mango group public key
 - `MANGO_ACCOUNT_PK`: Mango account to trade with
 - `EXECUTION_QUEUE_PK`: execution queue public key
+- `FERMI_API_URL`: Fermi API gateway URL
 
 Optional:
 
-- `FERMI_API_URL`: Fermi API gateway URL (default: `https://v1.fermi.trade`)
+- `FERMI_API_KEY`: API key for authenticated write endpoints (submit-intent)
 - `PROGRAM_ID`: override Mango program id
 - `COINGECKO_*`: fair-price source tuning
 
@@ -109,9 +110,9 @@ const context = await createMangoContext({
   executionQueuePk: process.env.EXECUTION_QUEUE_PK!,
 });
 
-const apiUrl = process.env.FERMI_API_URL || 'https://v1.fermi.trade';
+const apiUrl = process.env.FERMI_API_URL!;
 const harness = new ContinuumHarnessClient(apiUrl);
-const relayer = new ContinuumRelayerClient(apiUrl);
+const relayer = new ContinuumRelayerClient(apiUrl, process.env.FERMI_API_KEY);
 
 const optimistic = await harness.getMarketState(0, 'optimistic');
 
