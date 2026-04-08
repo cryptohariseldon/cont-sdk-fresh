@@ -13,7 +13,6 @@
   "files": [
     "dist",
     "docs",
-    "proto",
     "README.md",
     ".env.example"
   ],
@@ -26,8 +25,6 @@
   "dependencies": {
     "@blockworks-foundation/mango-v4": "^0.24.0",
     "@coral-xyz/anchor": "^0.29.0",
-    "@grpc/grpc-js": "^1.14.1",
-    "@grpc/proto-loader": "^0.8.0",
     "@solana/web3.js": "^1.78.2",
     "dotenv": "^16.0.3"
   },

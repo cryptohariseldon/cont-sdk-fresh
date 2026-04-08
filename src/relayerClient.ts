@@ -1,7 +1,4 @@
-import * as grpc from '@grpc/grpc-js';
-import * as protoLoader from '@grpc/proto-loader';
 import { AccountMeta, PublicKey } from '@solana/web3.js';
-import path from 'path';
 
 export type RelayerAccountMeta = {
   pubkey: string;
@@ -29,36 +26,12 @@ export type SubmitIntentResponse = {
   ctm_envelope_message: Buffer;
 };
 
-type RelayerGrpcClient = {
-  submitIntent(
-    request: SubmitIntentRequest,
-    callback: (err: Error | null, response: SubmitIntentResponse) => void,
-  ): void;
-  close(): void;
-};
-
-type LoadedProto = {
-  ctmsequencer: {
-    CtmSequencerRelayer: new (
-      addr: string,
-      creds: grpc.ChannelCredentials,
-    ) => RelayerGrpcClient;
-  };
-};
-
-function loadRelayerProto(protoPath: string): LoadedProto {
-  const packageDefinition = protoLoader.loadSync(protoPath, {
-    keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true,
-  });
-  return grpc.loadPackageDefinition(packageDefinition) as unknown as LoadedProto;
+function toBase64(data: Uint8Array): string {
+  return Buffer.from(data).toString('base64');
 }
 
-export function defaultRelayerProtoPath(): string {
-  return path.resolve(__dirname, '../proto/ctm_sequencer.proto');
+function fromBase64(data: string): Buffer {
+  return Buffer.from(data, 'base64');
 }
 
 export function toRelayerAccountMeta(account: AccountMeta): RelayerAccountMeta {
@@ -69,37 +42,57 @@ export function toRelayerAccountMeta(account: AccountMeta): RelayerAccountMeta {
   };
 }
 
-export class ContinuumRelayerClient {
-  private readonly client: RelayerGrpcClient;
+export const DEFAULT_FERMI_API_URL = 'https://v1.fermi.trade';
 
-  constructor(
-    addr: string,
-    opts?: {
-      protoPath?: string;
-      credentials?: grpc.ChannelCredentials;
-    },
-  ) {
-    const proto = loadRelayerProto(opts?.protoPath ?? defaultRelayerProtoPath());
-    this.client = new proto.ctmsequencer.CtmSequencerRelayer(
-      addr,
-      opts?.credentials ?? grpc.credentials.createInsecure(),
-    );
+export class ContinuumRelayerClient {
+  private readonly baseUrl: string;
+
+  constructor(baseUrl?: string) {
+    this.baseUrl = (baseUrl ?? DEFAULT_FERMI_API_URL).replace(/\/+$/, '');
   }
 
   async submitIntent(request: SubmitIntentRequest): Promise<SubmitIntentResponse> {
-    return await new Promise<SubmitIntentResponse>((resolve, reject) => {
-      this.client.submitIntent(request, (err, response) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(response);
-      });
+    const body = {
+      group: request.group,
+      execution_queue: request.execution_queue,
+      market: request.market,
+      payload: toBase64(request.payload),
+      remaining_accounts: request.remaining_accounts,
+      min_execute_slot: request.min_execute_slot,
+      expires_at_slot: request.expires_at_slot,
+      user_owner: request.user_owner,
+      mango_account: request.mango_account,
+      user_signature: toBase64(request.user_signature),
+    };
+
+    const response = await fetch(`${this.baseUrl}/submit-intent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`submit-intent failed: ${response.status} ${text}`);
+    }
+
+    const json = (await response.json()) as {
+      sequence: string;
+      tx_signature: string;
+      user_intent_message: string;
+      ctm_envelope_message: string;
+    };
+
+    return {
+      sequence: json.sequence,
+      tx_signature: json.tx_signature,
+      user_intent_message: fromBase64(json.user_intent_message),
+      ctm_envelope_message: fromBase64(json.ctm_envelope_message),
+    };
   }
 
   close(): void {
-    this.client.close();
+    // no-op — HTTP client has no persistent connection to close
   }
 }
 
