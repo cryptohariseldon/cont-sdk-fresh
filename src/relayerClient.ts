@@ -64,21 +64,21 @@ export class ContinuumRelayerClient {
       group: request.group,
       execution_queue: request.execution_queue,
       market: request.market,
-      payload: toBase64(request.payload),
+      payload_b64: toBase64(request.payload),
       remaining_accounts: request.remaining_accounts,
       min_execute_slot: request.min_execute_slot,
       expires_at_slot: request.expires_at_slot,
       user_owner: request.user_owner,
       mango_account: request.mango_account,
-      user_signature: toBase64(request.user_signature),
+      user_signature_b64: toBase64(request.user_signature),
     };
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      'x-api-key': apiKey,
     };
 
-    const response = await fetch(`${this.baseUrl}/submit-intent`, {
+    const response = await fetch(`${this.baseUrl}/relay/submit-intent`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -89,18 +89,13 @@ export class ContinuumRelayerClient {
       throw new Error(`submit-intent failed: ${response.status} ${text}`);
     }
 
-    const json = (await response.json()) as {
-      sequence: string;
-      tx_signature: string;
-      user_intent_message: string;
-      ctm_envelope_message: string;
-    };
+    const json = await response.json() as Record<string, unknown>;
 
     return {
-      sequence: json.sequence,
-      tx_signature: json.tx_signature,
-      user_intent_message: fromBase64(json.user_intent_message),
-      ctm_envelope_message: fromBase64(json.ctm_envelope_message),
+      sequence: (json.sequence as string) ?? '',
+      tx_signature: (json.tx_signature as string) ?? '',
+      user_intent_message: json.user_intent_message ? fromBase64(json.user_intent_message as string) : Buffer.alloc(0),
+      ctm_envelope_message: json.ctm_envelope_message ? fromBase64(json.ctm_envelope_message as string) : Buffer.alloc(0),
     };
   }
 

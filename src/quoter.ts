@@ -139,7 +139,7 @@ export class RelayerPerpQuoterBot {
       try {
         await this.tick();
       } catch (err) {
-        const message = err instanceof Error ? err.message : `${err}`;
+        const message = err instanceof Error ? err.message : JSON.stringify(err);
         this.log('quote_tick_failed', { error: message });
       }
       const elapsed = Date.now() - startedAt;
